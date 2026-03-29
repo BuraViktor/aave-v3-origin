@@ -1,0 +1,76 @@
+name: Security Scanning
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trufflehog:
+    name: TruffleHog Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secret Scanning
+        uses: trufflesecurity/trufflehog@f42f8e1bfb7eb93ee0d6b83c44f5cae1c3ce1c72  # v3.63.7
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --json
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: ['javascript', 'python']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@6db0df469ec0a093a6295e076efc3ddf91081007  # v2.14.2
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@6db0df469ec0a093a6295e076efc3ddf91081007  # v2.14.2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@6db0df469ec0a093a6295e076efc3ddf91081007  # v2.14.2
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  linting:
+    name: Code Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Run Super-Linter
+        uses: github/super-linter@4a475c5f4fb77bdbbe6c9e34e58f61e20e0c9f5a  # v4.9.7
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_JSON: true
+          VALIDATE_YAML: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_DOCKERFILE: true
