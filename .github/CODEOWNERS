@@ -1,0 +1,12 @@
+# CODEOWNERS
+
+# Set up code owners for critical directories
+
+# Owners for contracts directory
+/contracts/ @BuraViktor
+
+# Owners for core directory
+/core/ @BuraViktor
+
+# Owners for periphery directory
+/periphery/ @BuraViktor
